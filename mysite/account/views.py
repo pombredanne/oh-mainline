@@ -18,11 +18,13 @@
 
 # Imports {{{
 from django.http import HttpResponse, HttpResponseRedirect
-import django.contrib.auth 
+import django.contrib.auth
 from django.contrib.auth.decorators import login_required
 import django.contrib.auth.forms
 from django.core.urlresolvers import reverse
 import django_authopenid.views
+
+from django.contrib.sessions.models import Session
 
 from invitation.forms import InvitationKeyForm
 from invitation.models import InvitationKey
@@ -32,9 +34,10 @@ import logging
 import json
 
 import mysite.base.views
-import mysite.base.controllers
+import mysite.base.view_helpers
 import mysite.account.forms
-from mysite.base.helpers import render_response
+from mysite.base.view_helpers import render_response
+from mysite.account.view_helpers import clear_user_sessions
 import mysite.profile.views
 
 # FIXME: We did this because this decorator used to live here
@@ -43,6 +46,7 @@ import mysite.profile.views
 from mysite.base.decorators import view
 import django.contrib.auth.views
 # }}}
+
 
 def signup_do(request):
     # {{{
@@ -54,29 +58,30 @@ def signup_do(request):
 
         user = signup_form.save()
 
-
         username = request.POST['username']
         password = request.POST['password1']
 
         # authenticate and login
         user = django.contrib.auth.authenticate(
-                username=username,
-                password=password)
+            username=username,
+            password=password)
         django.contrib.auth.login(request, user)
 
         # redirect to profile
         return HttpResponseRedirect(
-                '/people/%s/' % urllib.quote(username))
+            '/people/%s/' % urllib.quote(username))
 
     else:
         return mysite.account.views.signup(request, signup_form=signup_form)
     # }}}
+
 
 def signup(request, signup_form=None):
     if signup_form is None:
         signup_form = mysite.account.forms.UserCreationFormWithEmail()
 
     return render_response(request, 'account/signup.html', {'form': signup_form})
+
 
 @login_required
 @view
@@ -97,12 +102,13 @@ def edit_photo(request, form=None, non_validation_error=False):
 
     return (request, 'account/edit_photo.html', data)
 
+
 @login_required
 def edit_photo_do(request, mock=None):
     person = request.user.get_profile()
     form = mysite.account.forms.EditPhotoForm(request.POST,
-                                       request.FILES,
-                                       instance=person)
+                                              request.FILES,
+                                              instance=person)
 
     try:
         # Exceptions can be raised by the photo manipulation libraries while
@@ -127,8 +133,10 @@ def edit_photo_do(request, mock=None):
     else:
         return edit_photo(request, form)
 
+
 def catch_me(request):
-    failboat # NameError
+    failboat  # NameError
+
 
 @login_required
 @view
@@ -137,6 +145,7 @@ def settings(request):
     data = {}
     return (request, 'account/settings.html', data)
     # }}}
+
 
 @login_required
 @view
@@ -153,12 +162,12 @@ def edit_contact_info(request, edit_email_form=None, show_email_form=None, email
         edit_email_form = mysite.account.forms.EditEmailForm(
             instance=request.user, prefix='edit_email')
     data['edit_email_form'] = edit_email_form
-    
+
     if show_email_form is None:
         show_email = request.user.get_profile().show_email
         prefix = "show_email"
-        data['show_email_form'] =  mysite.account.forms.ShowEmailForm(
-                initial={'show_email': show_email}, prefix=prefix)
+        data['show_email_form'] = mysite.account.forms.ShowEmailForm(
+            initial={'show_email': show_email}, prefix=prefix)
     else:
         data['show_email_form'] = show_email_form
 
@@ -169,17 +178,18 @@ def edit_contact_info(request, edit_email_form=None, show_email_form=None, email
 
     return (request, 'account/edit_contact_info.html', data)
 
+
 @login_required
 def edit_contact_info_do(request):
     # Handle "Edit email"
     edit_email_form = mysite.account.forms.EditEmailForm(
-            request.POST, prefix='edit_email', instance=request.user)
+        request.POST, prefix='edit_email', instance=request.user)
 
     show_email_form = mysite.account.forms.ShowEmailForm(
-            request.POST, prefix='show_email')
+        request.POST, prefix='show_email')
 
     email_me_form = mysite.account.forms.EmailMeForm(
-            request.POST, prefix='email_me', instance=request.user.get_profile())
+        request.POST, prefix='email_me', instance=request.user.get_profile())
 
     # Email saving functionality requires two forms to both be
     # valid. This really ought to be the same form, anyway.
@@ -192,19 +202,20 @@ def edit_contact_info_do(request):
         p.save()
 
         logging.debug('Changing email of user <%s> to <%s>' % (
-                request.user, edit_email_form.cleaned_data['email']))
+            request.user, edit_email_form.cleaned_data['email']))
         edit_email_form.save()
 
         return HttpResponseRedirect(reverse(edit_contact_info) +
                                     '?notification_id=success')
     else:
         return edit_contact_info(request,
-                edit_email_form=edit_email_form,
-                show_email_form=show_email_form)
+                                 edit_email_form=edit_email_form,
+                                 show_email_form=show_email_form)
+
 
 @login_required
 @view
-def change_password(request, change_password_form = None):
+def change_password(request, change_password_form=None):
     # {{{
 
     if change_password_form is None:
@@ -223,13 +234,15 @@ def change_password(request, change_password_form = None):
              'account_notification': account_notification})
     # }}}
 
+
 @login_required
 @view
-def edit_name(request, edit_name_form = None):
+def edit_name(request, edit_name_form=None):
     # {{{
 
     if edit_name_form is None:
-        edit_name_form = mysite.account.forms.EditNameForm(instance=request.user)
+        edit_name_form = mysite.account.forms.EditNameForm(
+            instance=request.user)
 
     if request.GET.get('notification_id', None) == 'success':
         if request.user.first_name or request.user.last_name:
@@ -245,6 +258,7 @@ def edit_name(request, edit_name_form = None):
              'account_notification': account_notification})
     # }}}
 
+
 @login_required
 def edit_name_do(request):
     user = request.user
@@ -257,11 +271,12 @@ def edit_name_do(request):
                                     '?notification_id=success')
     else:
         return edit_name(request,
-                edit_name_form=edit_name_form)
+                         edit_name_form=edit_name_form)
+
 
 @login_required
 @view
-def set_location(request, edit_location_form = None):
+def set_location(request, edit_location_form=None):
     # {{{
 
     data = {}
@@ -270,17 +285,18 @@ def set_location(request, edit_location_form = None):
     # If the user's location is the default one, then we create a guess.
     if (not request.user.get_profile().location_display_name) or (
         request.user.get_profile().location_display_name ==
-        mysite.profile.models.DEFAULT_LOCATION):
-        geoip_guess = mysite.profile.controllers.get_geoip_guess_for_ip(
+            mysite.profile.models.DEFAULT_LOCATION):
+        geoip_guess = mysite.profile.view_helpers.get_geoip_guess_for_ip(
             mysite.base.middleware.get_user_ip(request))[1]
         initial['location_display_name'] = geoip_guess
     else:
-        initial['location_display_name'] = request.user.get_profile().location_display_name
+        initial['location_display_name'] = request.user.get_profile(
+        ).location_display_name
 
     # Initialize edit location form
     if edit_location_form is None:
         edit_location_form = mysite.account.forms.EditLocationForm(
-                prefix='edit_location', instance=request.user.get_profile(), initial = initial)
+            prefix='edit_location', instance=request.user.get_profile(), initial=initial)
 
     data['edit_location_form'] = edit_location_form
 
@@ -292,6 +308,7 @@ def set_location(request, edit_location_form = None):
     return (request, 'account/set_location.html', data)
     # }}}
 
+
 @login_required
 def set_location_do(request):
     user_profile = request.user.get_profile()
@@ -300,10 +317,15 @@ def set_location_do(request):
         instance=user_profile, prefix='edit_location')
     if edit_location_form.is_valid():
         address = edit_location_form.cleaned_data['location_display_name']
-        as_string = mysite.base.controllers.cached_geocoding_in_json(address)
+        as_string = mysite.base.view_helpers.cached_geocoding_in_json(address)
         as_dict = json.loads(as_string)
-        user_profile.latitude = as_dict['latitude']
-        user_profile.longitude = as_dict['longitude']
+        if 'latitude' and 'longitude' in as_dict:
+            user_profile.latitude = as_dict['latitude']
+            user_profile.longitude = as_dict['longitude']
+        else:
+            user_profile.location_display_name = mysite.profile.models.DEFAULT_LOCATION
+            user_profile.latitude = mysite.profile.models.DEFAULT_LATITUDE
+            user_profile.longitude = mysite.profile.models.DEFAULT_LONGITUDE
         user_profile.location_confirmed = True
         user_profile.save()
         edit_location_form.save()
@@ -312,14 +334,16 @@ def set_location_do(request):
                                     '?notification_id=success')
     else:
         return set_location(request,
-                edit_location_form=edit_location_form)
-       
+                            edit_location_form=edit_location_form)
+
+
 @login_required
 def confirm_location_suggestion_do(request):
     person = request.user.get_profile()
     person.location_confirmed = True
     person.save()
     return HttpResponse()
+
 
 @login_required
 def dont_guess_location_do(request):
@@ -329,30 +353,34 @@ def dont_guess_location_do(request):
     person.save()
     return HttpResponse()
 
+
 @login_required
 def change_password_do(request):
     # {{{
     form = django.contrib.auth.forms.PasswordChangeForm(
-            request.user, request.POST)
+        request.user, request.POST)
     if form.is_valid():
-        form.save() 
+        form.save()
+        clear_user_sessions(request.user, session_to_omit=request.session)
         return HttpResponseRedirect(
             reverse(change_password) + '?notification_id=success')
     else:
         return change_password(request, change_password_form=form)
     # }}}
 
+
 @login_required
 @view
 def widget(request):
     data = {}
-    data.update(mysite.base.controllers.get_uri_metadata_for_generating_absolute_links(
+    data.update(mysite.base.view_helpers.get_uri_metadata_for_generating_absolute_links(
         request))
     return (request, 'account/widget.html', data)
 
+
 @login_required
 @view
-def invite_someone(request, form=None,success_message=''):
+def invite_someone(request, form=None, success_message=''):
     if form is None:
         invite_someone_form = InvitationKeyForm()
     else:
@@ -361,10 +389,18 @@ def invite_someone(request, form=None,success_message=''):
     remaining_invites = InvitationKey.objects.remaining_invitations_for_user(
         request.user)
 
+    if request.GET.get('invited'):
+        account_notification = 'E-mail has been sent.'
+    else:
+        account_notification = ''
+
     return (request, 'account/invite_someone.html', {
             'success_message': success_message,
             'invite_someone_form': invite_someone_form,
-            'remaining_invites': remaining_invites})
+            'remaining_invites': remaining_invites,
+            'account_notification': account_notification,
+            })
+
 
 def proxyconnect_sso(request):
     '''This function implements the ProxyConnect single
@@ -377,6 +413,7 @@ def proxyconnect_sso(request):
             request, 'vanilla-proxy-connect-sso.txt', {}, 'proxyconnect-sso')
     # Vanilla wants a 0-byte response if you are not logged in.
     return HttpResponse("")
+
 
 @login_required
 def invite_someone_do(request):
@@ -393,53 +430,55 @@ def invite_someone_do(request):
             return HttpResponseRedirect(
                 reverse(invite_someone) + '?invited=' +
                 urllib.quote(form.cleaned_data['email']))
-        else: # yes, there's an email; no, the guy can't invite
+        else:  # yes, there's an email; no, the guy can't invite
             return invite_someone(request, form=form,
                                   error_message='No more invites.')
     else:
         return invite_someone(request, form=form)
 
-### The following is copied here from django_authopenid, and then
-### modified trivially in the POST handler.
+# The following is copied here from django_authopenid, and then
+# modified trivially in the POST handler.
+
+
 @django_authopenid.views.not_authenticated
-def register(request, template_name='authopenid/complete.html', 
-             redirect_field_name=django.contrib.auth.REDIRECT_FIELD_NAME, 
+def register(request, template_name='authopenid/complete.html',
+             redirect_field_name=django.contrib.auth.REDIRECT_FIELD_NAME,
              register_form=django_authopenid.forms.OpenidRegisterForm,
-             auth_form=django.contrib.auth.forms.AuthenticationForm, 
-             register_account=django_authopenid.views.register_account, send_email=False, 
+             auth_form=django.contrib.auth.forms.AuthenticationForm,
+             register_account=django_authopenid.views.register_account, send_email=False,
              extra_context=None):
     """
     register an openid.
 
-    If user is already a member he can associate its openid with 
+    If user is already a member he can associate its openid with
     its account.
 
     A new account could also be created and automaticaly associated
     to the openid.
 
     :attr request: request object
-    :attr template_name: string, name of template to use, 
+    :attr template_name: string, name of template to use,
     'authopenid/complete.html' by default
-    :attr redirect_field_name: string, field name used for redirect. by default 
+    :attr redirect_field_name: string, field name used for redirect. by default
     'next'
-    :attr register_form: form use to create a new account. By default 
+    :attr register_form: form use to create a new account. By default
     `OpenidRegisterForm`
-    :attr auth_form: form object used for legacy authentification. 
+    :attr auth_form: form object used for legacy authentification.
     by default `OpenidVerifyForm` form auser auth contrib.
-    :attr register_account: callback used to create a new account from openid. 
+    :attr register_account: callback used to create a new account from openid.
     It take the register_form as param.
-    :attr send_email: boolean, by default True. If True, an email will be sent 
+    :attr send_email: boolean, by default True. If True, an email will be sent
     to the user.
-    :attr extra_context: A dictionary of variables to add to the template 
-    context. Any callable object in this dictionary will be called to produce 
+    :attr extra_context: A dictionary of variables to add to the template
+    context. Any callable object in this dictionary will be called to produce
     the end result which appears in the context.
     """
     redirect_to = request.REQUEST.get(redirect_field_name, '')
     openid_ = request.session.get('openid', None)
     if openid_ is None or not openid_:
         return HttpResponseRedirect("%s?%s" % (reverse('user_signin'),
-                                urllib.urlencode({ 
-                                redirect_field_name: redirect_to })))
+                                               urllib.urlencode({
+                                                   redirect_field_name: redirect_to})))
 
     nickname = ''
     email = ''
@@ -448,16 +487,16 @@ def register(request, template_name='authopenid/complete.html',
         email = openid_.sreg.get('email', '')
     if openid_.ax is not None and not nickname or not email:
         if openid_.ax.get('http://schema.openid.net/namePerson/friendly', False):
-            nickname = openid_.ax.get('http://schema.openid.net/namePerson/friendly')[0]
+            nickname = openid_.ax.get(
+                'http://schema.openid.net/namePerson/friendly')[0]
         if openid_.ax.get('http://schema.openid.net/contact/email', False):
             email = openid_.ax.get('http://schema.openid.net/contact/email')[0]
-        
-    
+
     form1 = register_form(initial={
         'username': nickname,
         'email': email,
-    }) 
-    form2 = auth_form(initial={ 
+    })
+    form2 = auth_form(initial={
         'username': nickname,
     })
 
@@ -466,10 +505,10 @@ def register(request, template_name='authopenid/complete.html',
         if not redirect_to or '//' in redirect_to or ' ' in redirect_to:
             redirect_to = settings.LOGIN_REDIRECT_URL
         if 'email' in request.POST.keys():
-            form1 = register_form(data=request.POST)        
+            form1 = register_form(data=request.POST)
             if form1.is_valid():
                 user_ = register_account(form1, openid_)
-                
+
                 extra_profile_form = mysite.account.forms.SignUpIfYouWantToHelpForm(
                     request.POST, prefix='extra_profile_form')
                 if extra_profile_form.is_valid():
@@ -477,12 +516,12 @@ def register(request, template_name='authopenid/complete.html',
                     method2contact_info = {
                         'forwarder': 'You can reach me by email at $fwd',
                         'public_email': 'You can reach me by email at %s' % user_.email,
-                        }
+                    }
                     info = method2contact_info[extra_profile_form.cleaned_data[
                         'how_should_people_contact_you']]
                     person.contact_blurb = info
                     person.save()
-                
+
         else:
             form2 = auth_form(data=request.POST)
             if form2.is_valid():
@@ -490,13 +529,13 @@ def register(request, template_name='authopenid/complete.html',
         if user_ is not None:
             # associate the user to openid
             uassoc = django_authopenid.models.UserAssociation(
-                        openid_url=str(openid_),
-                        user_id=user_.id
+                openid_url=str(openid_),
+                user_id=user_.id
             )
             uassoc.save(send_email=send_email)
             django.contrib.auth.login(request, user_)
-            return HttpResponseRedirect(redirect_to) 
-    
+            return HttpResponseRedirect(redirect_to)
+
     return render_response(request, template_name, {
         'form1': form1,
         'form2': form2,
@@ -507,8 +546,9 @@ def register(request, template_name='authopenid/complete.html',
         'email': email
     }, context_instance=django_authopenid.views._build_context(request, extra_context=extra_context))
 
-### We use this "not_authenticated" wrapper so that if you *are* logged in, you go
-### straight to the ?next= value.
-login = django_authopenid.views.not_authenticated(django.contrib.auth.views.login)
+# We use this "not_authenticated" wrapper so that if you *are* logged in, you go
+# straight to the ?next= value.
+login = django_authopenid.views.not_authenticated(
+    django.contrib.auth.views.login)
 
 # vim: ai ts=3 sts=4 et sw=4 nu

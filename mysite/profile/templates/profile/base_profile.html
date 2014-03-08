@@ -38,13 +38,14 @@
     <div id='nameplate'>
             {% if person.user.first_name or person.user.last_name %}
             <h1 class='name'>
-                <a href='/people/{{ person.user.username }}'>
                     {{ person.user.first_name }}
                     {{ person.user.last_name }}
                     <span class='username' style="font-size: .7em;">
                         ({{ person.user.username }})
+                        {% if editable %}
+                            (<a href='{% url account.views.edit_name %}'>edit name</a>)
+                        {% endif %}
                     </span>
-                </a>
             </h1>
             {% else %}
             <h1 class='name'>
@@ -57,12 +58,10 @@
 
 
             {% if editable %}
-            <a class='name-edit-link' href='{% url account.views.edit_name %}'>
-                <img src={% version '/static/images/icons/pencil.png' %}
-                alt='Edit name' />
-            </a>
-            <div id='edit_your_name_notification' 
-                class='notification'>&laquo; Tell us your name!</div>
+              <a href='{% url account.views.edit_name %}' class="edit-name-link">
+                <div id='edit_your_name_notification' 
+                    class='notification'>Tell us your name!</div>
+              </a>
             {% endif %}
             {% endif %}
 
@@ -161,7 +160,7 @@
         {% if person.homepage_url %}
         <h4>web site</h4>
         <p>
-            <a rel="me" href="{{ person.homepage_url|prepend_http_if_necessary }}">{{ person.homepage_url|break_long_words|safe }}</a>
+            <a rel="me" href="{{ person.homepage_url|prepend_http_if_necessary }}">{{ person.homepage_url|break_long_words }}</a>
         </p>
         {% endif %}
 

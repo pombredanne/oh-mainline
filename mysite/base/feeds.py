@@ -19,8 +19,9 @@ from django.contrib.syndication.feeds import Feed, FeedDoesNotExist
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
 from mysite.profile.models import Person
-from mysite.profile.controllers import RecommendBugs
+from mysite.profile.view_helpers import RecommendBugs
 from mysite.search.models import Answer, WannaHelperNote
+
 
 class RecommendedBugsFeed(Feed):
     feed_type = Atom1Feed
@@ -42,11 +43,12 @@ class RecommendedBugsFeed(Feed):
     def items(self, obj):
         suggested_searches = obj.get_recommended_search_terms()
         recommender = RecommendBugs(
-                suggested_searches, n=15)
+            suggested_searches, n=15)
         return recommender.recommend()
 
     def item_link(self, obj):
         return obj.canonical_bug_link
+
 
 class RecentActivityFeed(Feed):
     feed_type = Atom1Feed
@@ -56,6 +58,7 @@ class RecentActivityFeed(Feed):
 
     def items(self):
         feed_items = list(Answer.objects.order_by('-modified_date')[:15])
-        feed_items.extend(WannaHelperNote.objects.order_by('-modified_date')[:15])
+        feed_items.extend(
+            WannaHelperNote.objects.order_by('-modified_date')[:15])
         feed_items.sort(key=lambda x: x.modified_date, reverse=True)
         return feed_items[:15]

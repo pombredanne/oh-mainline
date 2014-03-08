@@ -18,10 +18,11 @@
 
 from unittest import TestCase
 from mysite.base.tests import TwillTests
-from mysite.missions.base import views, controllers
+from mysite.missions.base import views
+import mysite.missions.base.view_helpers
 from mysite.missions.models import StepCompletion, Step
 from mysite.profile.models import Person
-from mysite.base.helpers import subproc_check_output
+from mysite.base.view_helpers import subproc_check_output
 from django.conf import settings
 from django.test.client import Client
 from django.core.urlresolvers import reverse
@@ -37,8 +38,17 @@ import difflib
 import shutil
 import random
 
+
+def get_mission_test_data_path(mission_type):
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    new_path = os.path.join(base_path, '..', mission_type, 'test_data')
+    absolute_ified = os.path.abspath(new_path)
+    return absolute_ified
+
+
 def make_testdata_filename(mission_type, filename):
     return os.path.join(os.path.dirname(__file__), '..', mission_type, 'testdata', filename)
+
 
 def list_of_true_keys(d):
     ret = []
@@ -46,6 +56,7 @@ def list_of_true_keys(d):
         if d[key]:
             ret.append(key)
     return ret
+
 
 class MainPageTests(TwillTests):
     fixtures = ['user-paulproteus', 'person-paulproteus']
@@ -56,10 +67,12 @@ class MainPageTests(TwillTests):
 
     def test_mission_completion_list_display(self):
         response = self.client.get(reverse(views.main_page))
-        self.assertFalse(list_of_true_keys(response.context['completed_missions']))
+        self.assertFalse(
+            list_of_true_keys(response.context['completed_missions']))
 
         paulproteus = Person.objects.get(user__username='paulproteus')
-        StepCompletion(person=paulproteus, step=Step.objects.get(name='tar')).save()
+        StepCompletion(person=paulproteus,
+                       step=Step.objects.get(name='tar')).save()
 
         response = self.client.get(reverse(views.main_page))
         self.assertEqual(['tar'],

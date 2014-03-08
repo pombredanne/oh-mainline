@@ -48,14 +48,15 @@ Editing project - {{ project.display_name }}
                             {% ifequal field.name 'icon_raw' %}
                                 <div style='clear: left; margin-top: 10px; 
                                         margin-right: 15px; text-align: center; width: 100px; float: left;'>
-                                    <div style='text-align: center; float: left; width: 100%; height: 64px;'>
-                                        <img id='icon' src='{% if project.icon_for_profile %}/static/{{ project.icon_for_profile }}{% else %}{% version '/static/images/throbber.gif' %}{% endif %}' />
+                                    <div style='text-align: center; float: left; width: 100%; height: 64px;' id="project_icon">
+                                        <img id='icon' src='{% if project.icon_for_profile %}/static/{{ project.icon_for_profile }}{% endif %}' />
                                         {% if not project.icon_for_profile %}
-                                            <div style='width: 100%; height: 30px;' id='icon_loading_message'
-                                                    style='text-align: center;' class='example'>
-                                                Looking up icon</div>
+                                            <div style='width: 100%; height: 38px;border:1px solid' id='icon_loading_message' style='text-align: center;' class='example'>
+                                                Add project icon here!</div>
                                         {% endif %}
+
                                     </div>
+                                    
                                 </div>
                             {% endifequal %}
                             <p style='float: left; width: 70%;'>
@@ -147,16 +148,18 @@ Editing project - {{ project.display_name }}
 		    {% else %}
 		  <p>If you register bug trackers with OpenHatch, we will crawl them
 		    for bugs.
-		   Those bugs will appear on the <a href="{% url mysite.search.views.fetch_bugs %}">volunteer opportunity finder</a>; we'll highlight the ones that are <em>bitesize</em> (meaning, good for newcomers)
+		   Those bugs will appear on the <a href="{% url mysite.search.views.search_index %}">volunteer opportunity finder</a>; we'll highlight the ones that are <em>bitesize</em> (meaning, good for newcomers)
 		    and those related to non-code tasks (e.g., documentation, graphic design, outreach).
 		  </p>
 		  <p>What sort of bug tracker does your project use?</p>
 		  <ul class="raquo_bullets">
 		    <li><a href="{% url mysite.customs.views.add_tracker bugzilla %}bugzilla?project_id={{ project.id }}">Bugzilla</a></li>
-		    <li><a href="{% url mysite.customs.views.add_tracker github %}github?project_id={{ project.id }}">GitHub</li>
-		    <li><a href="{% url mysite.customs.views.add_tracker google %}google?project_id={{ project.id }}">Google Code</li>
-		    <li><a href="{% url mysite.customs.views.add_tracker roundup %}roundup?project_id={{ project.id }}">Roundup</li>
-		    <li><a href="{% url mysite.customs.views.add_tracker trac %}trac?project_id={{ project.id }}">Trac</li>
+		    <li><a href="{% url mysite.customs.views.add_tracker github %}github?project_id={{ project.id }}">GitHub</a></li>
+		    <li><a href="{% url mysite.customs.views.add_tracker google %}google?project_id={{ project.id }}">Google Code</a></li>
+		    <li><a href="{% url mysite.customs.views.add_tracker jira %}jira?project_id={{ project.id }}">Jira</a></li>
+		    <li><a href="{% url mysite.customs.views.add_tracker launchpad %}launchpad?project_id={{ project.id }}">Launchpad</a></li>
+		    <li><a href="{% url mysite.customs.views.add_tracker roundup %}roundup?project_id={{ project.id }}">Roundup</a></li>
+		    <li><a href="{% url mysite.customs.views.add_tracker trac %}trac?project_id={{ project.id }}">Trac</a></li>
 		    </ul>
 		  {% endif %}
 		</div>

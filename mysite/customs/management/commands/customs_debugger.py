@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import logging
 
 from django.core.management.base import BaseCommand
 
 from mysite.search.models import Bug
+
 
 class Command(BaseCommand):
     help = "A bunch of tools for checking and cleaning the Bug database."
@@ -28,7 +28,7 @@ class Command(BaseCommand):
     def list_old_bugs(self, days, hours=0):
         count = 0
         x_days_ago = (datetime.datetime.now() -
-                        datetime.timedelta(days=days, hours=hours))
+                      datetime.timedelta(days=days, hours=hours))
         for bug in Bug.all_bugs.filter(last_polled__lt=x_days_ago):
             count += 1
             print "%d - %s" % (count, str(bug))
@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
     def delete_old_bugs(self, days, hours=0):
         x_days_ago = (datetime.datetime.now() -
-                        datetime.timedelta(days=days, hours=hours))
+                      datetime.timedelta(days=days, hours=hours))
         Bug.all_bugs.filter(last_polled__lt=x_days_ago).delete()
 
     def delete_closed_bugs(self):

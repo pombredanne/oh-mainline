@@ -15,28 +15,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from mysite.missions.base.views import *
-from mysite.missions.git import controllers, forms
+from mysite.missions.git import view_helpers, forms
 
 
-### POST handlers
-###
-### Forms submit to this, and we use these to validate input and/or
-### modify the information stored about the user, such as recording
-### that a mission was successfully completed.
+# POST handlers
+#
+# Forms submit to this, and we use these to validate input and/or
+# modify the information stored about the user, such as recording
+# that a mission was successfully completed.
 
 @login_required
 def resetrepo(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
-    controllers.GitRepository(request.user.username).reset()
-    controllers.unset_mission_completed(request.user.get_profile(), 'git_config')
-    controllers.unset_mission_completed(request.user.get_profile(), 'git_checkout')
-    controllers.unset_mission_completed(request.user.get_profile(), 'git_diff')
-    controllers.unset_mission_completed(request.user.get_profile(), 'git_rebase')
+    view_helpers.GitRepository(request.user.username).reset()
+    view_helpers.unset_mission_completed(
+        request.user.get_profile(), 'git_config')
+    view_helpers.unset_mission_completed(
+        request.user.get_profile(), 'git_checkout')
+    view_helpers.unset_mission_completed(
+        request.user.get_profile(), 'git_diff')
+    view_helpers.unset_mission_completed(
+        request.user.get_profile(), 'git_rebase')
     if 'stay_on_this_page' in request.GET:
         return HttpResponseRedirect(reverse(main_page))
     else:
         return HttpResponseRedirect(reverse(long_description))
+
 
 @login_required
 def checkout_submit(request):
@@ -48,12 +53,15 @@ def checkout_submit(request):
         form = forms.CheckoutForm(request.POST)
         if form.is_valid():
             if form.cleaned_data['secret_word'].lower() == 'the brain':
-                controllers.set_mission_completed(request.user.get_profile(), 'git_checkout')
+                view_helpers.set_mission_completed(
+                    request.user.get_profile(), 'git_checkout')
                 return HttpResponseRedirect(reverse(checkout))
             else:
-                data['git_checkout_error_message'] = "The author's name is incorrect."
+                data[
+                    'git_checkout_error_message'] = "The author's name is incorrect."
         data['git_checkout_form'] = form
     return checkout(request, data)
+
 
 @login_required
 def long_description_submit(request):
@@ -64,11 +72,13 @@ def long_description_submit(request):
     if request.method == 'POST':
         form = forms.ConfigForm(request.POST)
         if form.is_valid():
-            controllers.set_mission_completed(request.user.get_profile(), 'git_config')
+            view_helpers.set_mission_completed(
+                request.user.get_profile(), 'git_config')
             return HttpResponseRedirect(reverse(long_description))
 
     data['git_config_form'] = form
     return long_description(request, data)
+
 
 @login_required
 def diff_submit(request):
@@ -79,16 +89,19 @@ def diff_submit(request):
     if request.method == 'POST':
         form = forms.DiffForm(request.POST)
         if form.is_valid():
-                if controllers.GitDiffMission.commit_if_ok(request.user.username, form.cleaned_data['diff']):
-                    controllers.set_mission_completed(request.user.get_profile(), 'git_diff')
-                    return HttpResponseRedirect(reverse(diff))
-                else:
-                    data['git_diff_error_message'] = "Unable to commit the patch. Please check your patch and try again "
-                    
+            if view_helpers.GitDiffMission.commit_if_ok(request.user.username, form.cleaned_data['diff']):
+                view_helpers.set_mission_completed(
+                    request.user.get_profile(), 'git_diff')
+                return HttpResponseRedirect(reverse(diff))
+            else:
+                data[
+                    'git_diff_error_message'] = "Unable to commit the patch. Please check your patch and try again "
+
         else:
-            return diff(request, {'git_diff_form': form})          
+            return diff(request, {'git_diff_form': form})
         data['git_diff_form'] = form
     return diff(request, data)
+
 
 @login_required
 def rebase_submit(request):
@@ -101,48 +114,52 @@ def rebase_submit(request):
         if form.is_valid():
             lower_secret = form.cleaned_data['secret_word'].lower()
             if lower_secret == 'pinky' or lower_secret == 'pinky.':
-                controllers.set_mission_completed(request.user.get_profile(), 'git_rebase')
+                view_helpers.set_mission_completed(
+                    request.user.get_profile(), 'git_rebase')
                 return HttpResponseRedirect(reverse(rebase))
             else:
                 data['git_rebase_error_message'] = "The password is incorrect."
         data['git_rebase_form'] = form
     return rebase(request, data)
 
-### State manager
+# State manager
+
+
 class GitMissionPageState(MissionPageState):
+
     def __init__(self, request, passed_data):
-        super(GitMissionPageState, self).__init__(request, passed_data, 'Using Git')
+        super(GitMissionPageState, self).__init__(
+            request, passed_data, 'Using Git')
 
     def as_dict_for_template_context(self):
         (data, person) = self.get_base_data_dict_and_person()
         if person:
-            repo = controllers.GitRepository(self.request.user.username)
+            repo = view_helpers.GitRepository(self.request.user.username)
             data.update({
                 'repository_exists': repo.exists(),
-                'git_config_done': controllers.mission_completed(person, 'git_config'),
-                'git_checkout_done': controllers.mission_completed(person, 'git_checkout'),
-                'git_diff_done': controllers.mission_completed(person, 'git_diff'),
-                'git_rebase_done': controllers.mission_completed(person, 'git_rebase'),
+                'git_config_done': view_helpers.mission_completed(person, 'git_config'),
+                'git_checkout_done': view_helpers.mission_completed(person, 'git_checkout'),
+                'git_diff_done': view_helpers.mission_completed(person, 'git_diff'),
+                'git_rebase_done': view_helpers.mission_completed(person, 'git_rebase'),
             })
             if data['repository_exists']:
-              data.update({
-                'checkout_url': repo.public_url,
-              })
+                data.update({
+                    'checkout_url': repo.public_url,
+                })
         return data
 
 
-
-### Normal GET handlers. These are usually pretty short.
-
+# Normal GET handlers. These are usually pretty short.
 @view
-def main_page(request, passed_data = None):
+def main_page(request, passed_data=None):
     state = GitMissionPageState(request, passed_data)
     state.this_mission_page_short_name = 'Start page'
     return (request, 'missions/git/main_page.html',
             state.as_dict_for_template_context())
 
+
 @view
-def long_description(request, passed_data = None):
+def long_description(request, passed_data=None):
     state = GitMissionPageState(request, passed_data)
     state.this_mission_page_short_name = 'Setup Git'
     data = state.as_dict_for_template_context()
@@ -151,9 +168,10 @@ def long_description(request, passed_data = None):
         data.update(passed_data)
     return (request, 'missions/git/about_git.html', data)
 
+
 @login_required
 @view
-def checkout(request, passed_data = None):
+def checkout(request, passed_data=None):
     state = GitMissionPageState(request, passed_data)
     state.this_mission_page_short_name = 'Cloning'
     state.mission_step_prerequisite = 'git_config'
@@ -161,21 +179,23 @@ def checkout(request, passed_data = None):
     data['git_checkout_form'] = forms.CheckoutForm()
     return (request, 'missions/git/checkout.html', data)
 
+
 @login_required
 @view
-def diff(request, passed_data = None):
+def diff(request, passed_data=None):
     state = GitMissionPageState(request, passed_data)
     state.this_mission_page_short_name = 'Creating a patch'
     state.mission_step_prerequisite = 'git_checkout'
     data = state.as_dict_for_template_context()
-    if 'git_diff_form' not in data:        
+    if 'git_diff_form' not in data:
         data['git_diff_form'] = forms.DiffForm()
     data['file_for_git_diff'] = 'hello.py'
     return (request, 'missions/git/diff.html', data)
 
+
 @login_required
 @view
-def rebase(request, passed_data = None):
+def rebase(request, passed_data=None):
     state = GitMissionPageState(request, passed_data)
     state.this_mission_page_short_name = 'Rebase'
     state.mission_step_prerequisite = 'git_diff'

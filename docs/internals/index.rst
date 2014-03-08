@@ -2,9 +2,7 @@
 Internals
 =========
 
-* Adding a dependency
-* A tour of the templates
-* Automated testing
+Here's more information about our project structure that may be useful.
 
 .. toctree::
   :maxdepth: 2
@@ -13,14 +11,11 @@ Internals
   continuous_integration
   backup
   emergency_operations
+  wordpress
+  api
 
+Sections to add:
 
-Bug tracker import code
-=======================
-
-.. toctree::
-  :maxdepth: 2
-
-  bug_tracker_architecture
-
-* a step-by-step guide on adding a bug tracker
+* Adding a dependency
+* A tour of the templates
+* Automated testing

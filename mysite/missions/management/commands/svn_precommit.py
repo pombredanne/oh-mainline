@@ -17,8 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.core.management import BaseCommand, CommandError
-from mysite.missions.svn import controllers
+from mysite.missions.svn import view_helpers
+from mysite.base.unicode_sanity import utf8
 import sys
+
 
 class Command(BaseCommand):
     args = '<repo_path> <txn_id>'
@@ -28,13 +30,14 @@ class Command(BaseCommand):
         # This management command is called from the mission svn repositories
         # as the pre-commit hook.  It receives the repository path and transaction
         # ID as arguments, and it receives a description of applicable lock
-        # tokens on stdin.  Its environment and current directory are undefined.
+        # tokens on stdin.  Its environment and current directory are
+        # undefined.
         if len(args) != 2:
             raise CommandError, 'Exactly two arguments are expected.'
         repo_path, txn_id = args
 
         try:
-            controllers.SvnCommitMission.pre_commit_hook(repo_path, txn_id)
-        except controllers.IncorrectPatch, e:
-            sys.stderr.write('\n    ' + str(e) + '\n\n')
+            view_helpers.SvnCommitMission.pre_commit_hook(repo_path, txn_id)
+        except view_helpers.IncorrectPatch, e:
+            sys.stderr.write('\n    ' + utf8(e) + '\n\n')
             raise CommandError, 'The commit failed to validate.'

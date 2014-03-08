@@ -549,7 +549,7 @@ drawAddCitationForm = function() {
 
 Notifier = {};
 Notifier.displayMessage = function(message) {
-    $.jGrowl(message, {'life': 5000});
+    $.jGrowl($('<div/>').text(message).html(), {'life': 5000});
 };
 
 /******************
@@ -568,25 +568,29 @@ drawAddCitationFormNearThisButton = function () {
     var $citationForms = $(this).closest('.citations-wrapper').find('ul.citation-forms');
     var buildingBlockHTML = $('#citation_form_building_block').html();
     var $form_container = $(buildingBlockHTML);
-
+	
     // Set element ID
     $form_container.attr('id', generateUniqueID());
-
+	if ($citationForms.find('form').length >= 1 ){
+		return false;
+	}
     $citationForm = $form_container.find('form');
-   
+
+	
     $citationForms.append($form_container);
+	
 
-    console.log($citationForm);
+//    console.log($citationForm);
 
-    console.log($citationForm.parents('.portfolio_entry'));
+//    console.log($citationForm.parents('.portfolio_entry'));
 
     // Set field: portfolio entry ID
     var portfolioEntryID = $citationForm.closest('.portfolio_entry')
         .attr('portfolio_entry__pk');
     $citationForm.find('[name="portfolio_entry"]').attr('lang', 'your-mom');
     $citationForm.find('[name="portfolio_entry"]').attr('value', portfolioEntryID);
-    console.log('hi');
-    console.log($citationForm.find('[name="portfolio_entry"]'));
+//    console.log('hi');
+//    console.log($citationForm.find('[name="portfolio_entry"]'));
 
     // Set field: form container element ID
     var formContainerElementID = $citationForm.closest('.citation-forms li').attr('id');
@@ -809,6 +813,8 @@ PortfolioEntry.Save.save = function () {
 }
 PortfolioEntry.Save.bindEventHandlers = function() {
     $('.portfolio_entry li.publish_portfolio_entry a').click(PortfolioEntry.Save.save);
+    $('.citations-wrapper .add').click(drawAddCitationFormNearThisButton);
+
 };
 
 PortfolioEntry.Delete = {};
@@ -902,7 +908,6 @@ Importer.Inputs.init = function () {
             "Type a repository username here");
     Importer.Inputs.getInputs().eq(1).attr('title',
             "Type an email address here");
-    Importer.Inputs.getInputs().hint();
 };
 Importer.Inputs.makeNew = function () {
 
@@ -1019,7 +1024,6 @@ PortfolioEntry.Add.clickHandler = function (project_name) {
     }
 
     PortfolioEntry.bindEventHandlers();
-    $add_a_pf_entry.find('input[title]').hint();
 
     return false;
 };

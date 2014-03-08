@@ -15,15 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from django.db import models
+import mysite.search.models
+
 
 class Step(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-class StepCompletion(models.Model):
+
+class StepCompletion(mysite.search.models.OpenHatchModel):
     person = models.ForeignKey('profile.Person')
     step = models.ForeignKey('Step')
-    # Current mission status (True - user have completed it, False - reseted) 
+    # Current mission status (True - user have completed it, False - reseted)
     is_currently_completed = models.BooleanField(default=True)
-	
+
     class Meta:
         unique_together = ('person', 'step')
