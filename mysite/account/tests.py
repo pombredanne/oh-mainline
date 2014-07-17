@@ -1,4 +1,3 @@
-# This file is part of OpenHatch.
 # Copyright (C) 2010 Parker Phinney
 # Copyright (C) 2009, 2010 OpenHatch, Inc.
 # Copyright (C) 2010 Jessica McKellar
@@ -61,6 +60,26 @@ class Login(TwillTests):
         tc.notfind('log in')
         tc.follow('log out')
         tc.find('log in')
+
+    def test_logout_no_open_redirect(self):
+        client = Client()
+        # All test cases should redirect to the OpenHatch root.
+        # Verify existing logout still behaves as before:
+        response  = client.get('/account/logout/?next=/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'http://testserver/')
+        # Verify appended redirect url is ignored:
+        # Before the fix for issue 952, urlparse() redirected this url to
+        # /account/logout/.
+        response  = client.get('/account/logout/?next=http://www.example.com')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'http://testserver/')
+        # Verify appended redirect url is ignored
+        # Before the fix for issue 952, urlparse() redirected this url to
+        # example.com.
+        response  = client.get('/account/logout/?next=http:///www.example.com')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], 'http://testserver/')
     # }}}
 
 
@@ -362,77 +381,6 @@ class EditPhotoWithOldPerson(TwillTests):
                          open(image).read())
     #}}}
 
-
-class GuessLocationOnLogin(TwillTests):
-    #{{{
-    fixtures = ['user-paulproteus', 'person-paulproteus']
-
-    mock_ip = mock.Mock()
-    # Located in Rochester, New York, U.S.A.
-    mock_ip.return_value = "128.151.2.1"
-
-    @skipIf(not mysite.profile.view_helpers.geoip_city_database_available(), "Skipping because high-resolution GeoIP data not available.")
-    @mock.patch("mysite.base.middleware.get_user_ip", mock_ip)
-    def test_guess_location_on_accessing_edit_location_form(self):
-        person = Person.objects.get(user__username="paulproteus")
-        self.assertFalse(person.location_confirmed)
-        self.assertEqual('Inaccessible Island',
-                         person.get_public_location_or_default())
-
-        client = self.login_with_client()
-        response = client.get(reverse(mysite.account.views.set_location))
-        self.assertContains(response, "OpenHatch")
-        person = Person.objects.get(user__username="paulproteus")
-        self.assertContains(response, "Rochester, NY, United States")
-
-    mock_ip = mock.Mock()
-    # Located in Rochester, New York, U.S.A.
-    mock_ip.return_value = "128.151.2.1"
-
-    @skipIf(not mysite.profile.view_helpers.geoip_city_database_available(), "Skipping because high-resolution GeoIP data not available.")
-    @mock.patch("mysite.base.middleware.get_user_ip", mock_ip)
-    def test_do_not_guess_if_have_location_set(self):
-        person = Person.objects.get(user__username="paulproteus")
-        person.location_display_name = 'The White House'
-        person.latitude = 38.898748
-        person.longitude = -77.037684
-        person.location_confirmed = True
-        person.save()
-
-        client = self.login_with_client()
-        response = client.get(reverse(mysite.account.views.set_location))
-        self.assertContains(response, "OpenHatch")
-        person = Person.objects.get(user__username="paulproteus")
-        self.assertNotContains(response, "Rochester, NY, United States")
-        self.assertContains(response, "The White House")
-
-    def test_yes_response(self):
-        person = Person.objects.get(user__username="paulproteus")
-        # logging in
-        client = self.login_with_client()
-        # sending http request to correct page for "yes" response
-        response = client.post(
-            reverse(mysite.account.views.confirm_location_suggestion_do))
-        # asserting that we get back an http status code of 200
-        person = Person.objects.get(user__username="paulproteus")
-        self.assertEqual(response.status_code, 200)
-        # asserting that database was updated
-        self.assertTrue(person.location_confirmed)
-
-    def test_dont_guess_response(self):
-        person = Person.objects.get(user__username="paulproteus")
-        # logging in
-        client = self.login_with_client()
-        # sending http request to correct page for "don't guess" response
-        response = client.post(
-            reverse(mysite.account.views.dont_guess_location_do))
-        # asserting that we get back an http status code of 200
-        person = Person.objects.get(user__username="paulproteus")
-        self.assertEqual(response.status_code, 200)
-        # asserting that database was updated
-        self.assertTrue(person.dont_guess_my_location)
-
-    #}}}
 
 
 class SignupWithNoPassword(TwillTests):

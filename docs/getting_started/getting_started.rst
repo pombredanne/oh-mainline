@@ -18,20 +18,24 @@ Getting the source
 OpenHatch source code can be seen through a web interface at
 https://github.com/openhatch/oh-mainline
 
-To make contributions, you will need to clone our git repository. This requires
-having the git version control system installed. Once you do, type this into a
-terminal::
+To make contributions, you will need to do acquire the source code of www.openhatch.org. Complete these one-time tasks in the following 
+order:
 
-    $ git clone https://github.com/openhatch/oh-mainline.git
+    #. Make a new Github account on https://www.github.com if you don't already have one.
+    #. Fork the oh-mainline Github repository located here at https://github.com/openhatch/oh-mainline. Click on the fork button located on the upper  right corner of the project page. Now you have your own personal copy of the oh-mainline repository.
+    #. Install git the version control system. If you have already done so, skip to the next step.
+    #. Clone your personal copy of the oh-mainline repository to your computer by typing this command into your terminal::
+
+        $ git clone https://github.com/<YOUR_GITHUB_USERNAME>/oh-mainline.git
 
 It will take up to five minutes, depending on your Internet connection. it's
-kind of a big repository. (Sixty megabytes, or so.)
+kind of a big repository. (90 megabytes, or so.)
 
 
 How to run a local site
 =======================
 
-Read installation.rst inside getting_started directory
+Read installation.rst inside docs/getting_started directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once you have the repository, open up the installation.rst file in any
@@ -55,10 +59,10 @@ but we'll all be happier if you do)
   1. Join the `Devel mailing list`_ and say hello.
   2. :doc:`the #openhatch IRC channel in freenode </community/contact>`.
 
-We used to have weekly development meetings on IRC, but they are on hiatus for now. If you find the idea interesting and would show up, do `email devel@`_ and say so!
+
+OpenHatch holds development meetings on IRC; our goal is to hold these meetings weekly. The meetings are announced on `devel@openhatch.org`. Please join us on IRC and share your ideas or ask questions.
 
 .. _Devel mailing list: http://lists.openhatch.org/mailman/listinfo/devel
-.. _email devel@: devel@lists.openhatch.org
 
 
 Read more documentation

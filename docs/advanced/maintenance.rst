@@ -70,3 +70,11 @@ of that file is exactly what you expect.
 
 Finally, don't forget to add your component to the list above, so the next
 person does the right thing.
+
+Editing the website's CSS
+==========================
+
+The CSS files for OpenHatch repository can be found in the static folder of the oh-mainline repository:
+https://github.com/openhatch/oh-mainline/tree/master/mysite/static
+
+These CSS files has been written in Less format. Not sure what Less is? Read the official `documentation <http://lesscss.org/>`_.

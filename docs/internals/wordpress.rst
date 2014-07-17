@@ -34,6 +34,12 @@ django-debug-toolbar gets this pull request landed
 <https://github.com/django-debug-toolbar/django-debug-toolbar/pull/303>,
 we can use that in the instructions.)
 
+Editing the Wordpress CSS
+=========================
+
+If you wish to change the blog's appearance, you may need to edit the CSS file here:
+https://github.com/openhatch/oh-mainline/blob/master/mysite/static/css/blog-style.css  
+
 Related
 =======
 
